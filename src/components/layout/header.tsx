@@ -24,7 +24,7 @@ export function Header() {
   if (status === "loading") {
     return (
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center justify-between">
+        <div className="flex h-14 items-center justify-between px-6">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="h-6 w-6 rounded bg-blue-600 flex items-center justify-center">
@@ -44,7 +44,7 @@ export function Header() {
   if (!session) {
     return (
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center justify-between">
+        <div className="flex h-14 items-center justify-between px-6">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="h-6 w-6 rounded bg-blue-600 flex items-center justify-center">
@@ -68,7 +68,7 @@ export function Header() {
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 items-center justify-between">
+      <div className="flex h-14 items-center justify-between px-6">
         <div className="flex items-center">
           <Link href="/dashboard" className="flex items-center space-x-2">
             <div className="h-6 w-6 rounded bg-blue-600 flex items-center justify-center">
@@ -79,8 +79,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center">
-          <nav className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
+          <nav className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" asChild className="hidden sm:flex h-8">
               <Link href="/projects">
                 <Plus className="h-4 w-4 mr-2" />
                 New Project

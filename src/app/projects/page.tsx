@@ -20,7 +20,6 @@ import { Plus, Search, Filter, Loader2, Calendar } from "lucide-react"
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   description: z.string().optional(),
-  dueDate: z.string().optional(),
 })
 
 type CreateProjectData = z.infer<typeof createProjectSchema>
@@ -30,7 +29,6 @@ interface Project {
   name: string
   description?: string
   status: string
-  dueDate?: string
   owner: {
     id: string
     name?: string
@@ -50,7 +48,6 @@ interface Project {
     title: string
     status: string
     priority: string
-    dueDate?: string
   }>
   _count: {
     tasks: number
@@ -72,7 +69,6 @@ export default function ProjectsPage() {
     defaultValues: {
       name: "",
       description: "",
-      dueDate: "",
     },
   })
 
@@ -229,15 +225,6 @@ export default function ProjectsPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate">Due Date</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    {...form.register("dueDate")}
-                    disabled={isCreating}
-                  />
-                </div>
 
                 <DialogFooter>
                   <Button type="submit" disabled={isCreating}>
@@ -325,7 +312,7 @@ export default function ProjectsPage() {
                 }
                 totalTasks={project._count.tasks}
                 completedTasks={project.tasks.filter(t => t.status === 'COMPLETED').length}
-                dueDate={project.dueDate ? new Date(project.dueDate).toLocaleDateString() : ""}
+                dueDate=""
                 members={[
                   {
                     id: project.owner.id,
