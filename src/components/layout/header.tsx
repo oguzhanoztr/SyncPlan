@@ -72,14 +72,16 @@ export function Header() {
           </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+        <div className="flex flex-1 items-center justify-end">
           <nav className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New Project
+            <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
+              <Link href="/projects">
+                <Plus className="h-4 w-4 mr-1" />
+                New Project
+              </Link>
             </Button>
 
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="hidden sm:flex">
               <Bell className="h-4 w-4" />
             </Button>
 
@@ -109,6 +111,13 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="sm:hidden">
+                  <Link href="/projects">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Project
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="sm:hidden" />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
                     <User className="mr-2 h-4 w-4" />
@@ -116,9 +125,9 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings">
+                  <Link href="/projects">
                     <Settings className="mr-2 h-4 w-4" />
-                    Settings
+                    Projects
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
