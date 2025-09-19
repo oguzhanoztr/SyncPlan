@@ -57,6 +57,17 @@ export async function GET(request: NextRequest) {
         },
         creator: {
           select: { id: true, name: true, email: true, avatar: true }
+        },
+        parentTask: {
+          select: { id: true, title: true }
+        },
+        subtasks: {
+          include: {
+            assignee: {
+              select: { id: true, name: true, email: true, avatar: true }
+            }
+          },
+          orderBy: { createdAt: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
