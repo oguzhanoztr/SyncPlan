@@ -8,6 +8,7 @@ import { TaskCard } from "@/components/common/task-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, TrendingUp, Clock, CheckCircle2, Loader2 } from "lucide-react"
+import Link from "next/link"
 
 const mockProjects = [
   {
@@ -208,9 +209,11 @@ export default function DashboardPage() {
               Welcome back, {session?.user?.name || "User"}! Here's what's happening with your projects.
             </p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
+          <Button asChild>
+            <Link href="/projects">
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Link>
           </Button>
         </div>
 
@@ -281,11 +284,11 @@ export default function DashboardPage() {
                     description={project.description || ""}
                     status={project.status as "active" | "completed" | "on-hold"}
                     progress={project._count.tasks > 0 ?
-                      (project.tasks.filter(t => t.status === 'COMPLETED').length / project._count.tasks) * 100 : 0
+                      ((project.tasks || []).filter(t => t.status === 'COMPLETED').length / project._count.tasks) * 100 : 0
                     }
                     totalTasks={project._count.tasks}
-                    completedTasks={project.tasks.filter(t => t.status === 'COMPLETED').length}
-                    dueDate={project.dueDate ? new Date(project.dueDate).toLocaleDateString() : ""}
+                    completedTasks={(project.tasks || []).filter(t => t.status === 'COMPLETED').length}
+                    dueDate=""
                     members={[
                       {
                         id: project.owner.id,
