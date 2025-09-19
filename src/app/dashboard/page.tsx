@@ -284,11 +284,11 @@ export default function DashboardPage() {
                     description={project.description || ""}
                     status={project.status as "active" | "completed" | "on-hold"}
                     progress={project._count.tasks > 0 ?
-                      (project.tasks.filter(t => t.status === 'COMPLETED').length / project._count.tasks) * 100 : 0
+                      ((project.tasks || []).filter(t => t.status === 'COMPLETED').length / project._count.tasks) * 100 : 0
                     }
                     totalTasks={project._count.tasks}
-                    completedTasks={project.tasks.filter(t => t.status === 'COMPLETED').length}
-                    dueDate={project.dueDate ? new Date(project.dueDate).toLocaleDateString() : ""}
+                    completedTasks={(project.tasks || []).filter(t => t.status === 'COMPLETED').length}
+                    dueDate=""
                     members={[
                       {
                         id: project.owner.id,
