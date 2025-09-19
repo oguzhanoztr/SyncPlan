@@ -7,7 +7,6 @@ import { z } from 'zod'
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
   description: z.string().optional(),
-  dueDate: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
       data: {
         name: validatedData.name,
         description: validatedData.description,
-        dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         ownerId: session.user.id,
       },
       include: {
