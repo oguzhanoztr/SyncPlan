@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, MessageSquare, Paperclip } from "lucide-react"
+import Link from "next/link"
 
 interface TaskCardProps {
   id: string
   title: string
   description?: string
-  status: "todo" | "in-progress" | "review" | "done"
+  status: "todo" | "in-progress" | "review" | "done" | "completed"
   priority: "low" | "medium" | "high" | "urgent"
   assignee?: {
     id: string
@@ -41,7 +42,8 @@ export function TaskCard({
     todo: "bg-gray-500",
     "in-progress": "bg-blue-500",
     review: "bg-yellow-500",
-    done: "bg-green-500"
+    done: "bg-green-500",
+    completed: "bg-green-500"
   }
 
   const priorityColors = {
@@ -55,27 +57,29 @@ export function TaskCard({
     todo: "To Do",
     "in-progress": "In Progress",
     review: "Review",
-    done: "Done"
+    done: "Done",
+    completed: "Completed"
   }
 
   return (
-    <Card className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${priorityColors[priority]}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <h4 className="font-medium leading-tight line-clamp-2">{title}</h4>
-          <Badge
-            variant="secondary"
-            className={`${statusColors[status]} text-white text-xs ml-2`}
-          >
-            {statusLabels[status]}
-          </Badge>
-        </div>
-        {description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-            {description}
-          </p>
-        )}
-      </CardHeader>
+    <Link href={`/tasks/${id}`}>
+      <Card className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${priorityColors[priority]}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between">
+            <h4 className="font-medium leading-tight line-clamp-2">{title}</h4>
+            <Badge
+              variant="secondary"
+              className={`${statusColors[status]} text-white text-xs ml-2`}
+            >
+              {statusLabels[status]}
+            </Badge>
+          </div>
+          {description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+              {description}
+            </p>
+          )}
+        </CardHeader>
 
       <CardContent className="pt-0">
         <div className="space-y-3">
@@ -138,5 +142,6 @@ export function TaskCard({
         </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
