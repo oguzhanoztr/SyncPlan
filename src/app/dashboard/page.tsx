@@ -1,15 +1,12 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { Layout } from "@/components/layout/layout"
 import { ProjectCard } from "@/components/common/project-card"
 import { TaskCard } from "@/components/common/task-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, TrendingUp, Clock, CheckCircle2 } from "lucide-react"
-import Link from "next/link"
 
 const mockProjects = [
   {
@@ -73,67 +70,8 @@ const mockTasks = [
   },
 ]
 
-export default function Home() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin")
-    } else if (status === "authenticated") {
-      router.push("/dashboard")
-    }
-  }, [status, router])
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  if (status === "unauthenticated") {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-14 items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="h-6 w-6 rounded bg-primary" />
-              <span className="font-bold">SyncPlan</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" asChild>
-                <Link href="/auth/signin">Sign in</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/auth/signup">Get Started</Link>
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center p-8">
-          <div className="max-w-2xl text-center space-y-6">
-            <h1 className="text-4xl font-bold tracking-tight">
-              Modern Task Management for Teams
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Organize, collaborate, and deliver projects with SyncPlan's intuitive interface and powerful features.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button size="lg" asChild>
-                <Link href="/auth/signup">Start Free Trial</Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/auth/signin">Sign In</Link>
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+export default function DashboardPage() {
+  const { data: session } = useSession()
 
   return (
     <Layout>
@@ -142,7 +80,7 @@ export default function Home() {
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">
-              Welcome back! Here's what's happening with your projects.
+              Welcome back, {session?.user?.name || "User"}! Here's what's happening with your projects.
             </p>
           </div>
           <Button>
