@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Home,
   FolderKanban,
+  CheckSquare,
   Calendar,
   BarChart3,
   Settings,
@@ -24,6 +25,11 @@ const sidebarNavItems = [
     title: "Projects",
     href: "/projects",
     icon: FolderKanban,
+  },
+  {
+    title: "Tasks",
+    href: "/tasks",
+    icon: CheckSquare,
   },
   {
     title: "Calendar",
