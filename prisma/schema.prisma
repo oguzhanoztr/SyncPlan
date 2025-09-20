@@ -129,6 +129,12 @@ model Task {
   comments     Comment[]
   subtasks     Subtask[]
 
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([creatorId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([projectId, status])
   @@map("tasks")
 }
 
@@ -152,6 +158,12 @@ model Subtask {
   assignee User? @relation("SubtaskAssignee", fields: [assigneeId], references: [id])
   creator  User  @relation("SubtaskCreator", fields: [creatorId], references: [id])
 
+  @@index([taskId])
+  @@index([assigneeId])
+  @@index([creatorId])
+  @@index([status])
+  @@index([position])
+  @@index([taskId, position])
   @@map("subtasks")
 }
 
@@ -189,6 +201,8 @@ model ProjectMember {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
   @@map("project_members")
 }
 
