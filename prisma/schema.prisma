@@ -275,6 +275,7 @@ enum TaskStatus {
   IN_PROGRESS
   REVIEW
   DONE
+  COMPLETED
 }
 
 enum TaskPriority {
