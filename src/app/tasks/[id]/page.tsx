@@ -85,10 +85,6 @@ interface Task {
     email: string
     avatar?: string
   }
-  parentTask?: {
-    id: string
-    title: string
-  }
   subtasks: Array<{
     id: string
     title: string
@@ -149,13 +145,6 @@ export default function TaskDetailPage() {
       const response = await fetch(`/api/tasks/${taskId}`)
       if (response.ok) {
         const data = await response.json()
-
-        // If this is a subtask, redirect to parent task
-        if (data.task && data.task.parentTask) {
-          router.push(`/tasks/${data.task.parentTask.id}`)
-          return
-        }
-
         setTask(data.task)
 
         // Set form default values
@@ -204,15 +193,14 @@ export default function TaskDetailPage() {
     setIsCreatingSubtask(true)
 
     try {
-      const response = await fetch('/api/tasks', {
+      const response = await fetch('/api/subtasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...data,
-          projectId: task?.project.id,
-          parentTaskId: taskId,
+          taskId: taskId,
           priority: 'MEDIUM',
         }),
       })
@@ -255,7 +243,7 @@ export default function TaskDetailPage() {
 
   const handleSubtaskStatusUpdate = async (subtaskId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, {
+      const response = await fetch(`/api/subtasks/${subtaskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +266,7 @@ export default function TaskDetailPage() {
     if (!confirm('Are you sure you want to delete this subtask?')) return
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, {
+      const response = await fetch(`/api/subtasks/${subtaskId}`, {
         method: 'DELETE',
       })
 
