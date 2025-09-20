@@ -158,8 +158,8 @@ export default function DashboardPage() {
           // Calculate stats
           const totalProjects = projectsData.projects?.length || 0
           const allTasks = projectsData.projects?.flatMap((p: Project) => p.tasks) || []
-          const activeTasks = allTasks.filter((t: any) => t.status !== 'COMPLETED').length
-          const completedTasks = allTasks.filter((t: any) => t.status === 'COMPLETED').length
+          const activeTasks = allTasks.filter((t: any) => t.status !== 'COMPLETED' && t.status !== 'DONE').length
+          const completedTasks = allTasks.filter((t: any) => t.status === 'COMPLETED' || t.status === 'DONE').length
           const uniqueMembers = new Set()
 
           projectsData.projects?.forEach((p: Project) => {
@@ -284,10 +284,10 @@ export default function DashboardPage() {
                     description={project.description || ""}
                     status={project.status as "active" | "completed" | "on-hold"}
                     progress={project._count.tasks > 0 ?
-                      ((project.tasks || []).filter(t => t.status === 'COMPLETED').length / project._count.tasks) * 100 : 0
+                      ((project.tasks || []).filter(t => t.status === 'COMPLETED' || t.status === 'DONE').length / project._count.tasks) * 100 : 0
                     }
                     totalTasks={project._count.tasks}
-                    completedTasks={(project.tasks || []).filter(t => t.status === 'COMPLETED').length}
+                    completedTasks={(project.tasks || []).filter(t => t.status === 'COMPLETED' || t.status === 'DONE').length}
                     dueDate=""
                     members={[
                       {
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                     id={task.id}
                     title={task.title}
                     description={task.description || ""}
-                    status={task.status.toLowerCase() as "todo" | "in-progress" | "completed"}
+                    status={task.status === 'TODO' ? 'todo' : task.status === 'IN_PROGRESS' ? 'in-progress' : task.status === 'COMPLETED' ? 'completed' : task.status === 'REVIEW' ? 'review' : task.status === 'DONE' ? 'done' : 'todo'}
                     priority={task.priority.toLowerCase() as "low" | "medium" | "high" | "urgent"}
                     assignee={task.assignee ? {
                       id: task.assignee.id,

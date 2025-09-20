@@ -161,7 +161,7 @@ export default function ProjectDetailPage() {
     const total = project.tasks.length
     const todo = project.tasks.filter(t => t.status === 'TODO').length
     const inProgress = project.tasks.filter(t => t.status === 'IN_PROGRESS').length
-    const completed = project.tasks.filter(t => t.status === 'COMPLETED').length
+    const completed = project.tasks.filter(t => t.status === 'COMPLETED' || t.status === 'DONE').length
 
     return { total, todo, inProgress, completed }
   }
@@ -438,7 +438,7 @@ export default function ProjectDetailPage() {
                   id={task.id}
                   title={task.title}
                   description={task.description || ""}
-                  status={task.status.toLowerCase() as "todo" | "in-progress" | "completed"}
+                  status={task.status === 'TODO' ? 'todo' : task.status === 'IN_PROGRESS' ? 'in-progress' : task.status === 'COMPLETED' ? 'completed' : task.status === 'REVIEW' ? 'review' : task.status === 'DONE' ? 'done' : 'todo'}
                   priority={task.priority.toLowerCase() as "low" | "medium" | "high" | "urgent"}
                   assignee={task.assignee ? {
                     id: task.assignee.id,
