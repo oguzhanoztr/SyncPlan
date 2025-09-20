@@ -149,6 +149,13 @@ export default function TaskDetailPage() {
       const response = await fetch(`/api/tasks/${taskId}`)
       if (response.ok) {
         const data = await response.json()
+
+        // If this is a subtask, redirect to parent task
+        if (data.task && data.task.parentTask) {
+          router.push(`/tasks/${data.task.parentTask.id}`)
+          return
+        }
+
         setTask(data.task)
 
         // Set form default values
