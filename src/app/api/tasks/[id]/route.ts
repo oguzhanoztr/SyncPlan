@@ -7,7 +7,7 @@ import { z } from 'zod'
 const updateTaskSchema = z.object({
   title: z.string().min(1, "Task title is required").optional(),
   description: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'COMPLETED']).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().optional(),
   assigneeId: z.string().optional(),
