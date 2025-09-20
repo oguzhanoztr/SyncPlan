@@ -11,11 +11,85 @@ const updateSubtaskSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().optional(),
   assigneeId: z.string().optional(),
+  position: z.number().optional(),
 })
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const subtask = await prisma.subtask.findFirst({
+      where: {
+        id: params.id,
+        OR: [
+          { creatorId: session.user.id },
+          { assigneeId: session.user.id },
+          {
+            task: {
+              OR: [
+                { creatorId: session.user.id },
+                { assigneeId: session.user.id },
+                {
+                  project: {
+                    OR: [
+                      { ownerId: session.user.id },
+                      {
+                        members: {
+                          some: { userId: session.user.id }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      include: {
+        task: {
+          select: { id: true, title: true }
+        },
+        assignee: {
+          select: { id: true, name: true, email: true, avatar: true }
+        },
+        creator: {
+          select: { id: true, name: true, email: true, avatar: true }
+        }
+      }
+    })
+
+    if (!subtask) {
+      return NextResponse.json(
+        { error: 'Subtask not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ subtask })
+
+  } catch (error) {
+    console.error('Error fetching subtask:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; subtaskId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -31,20 +105,27 @@ export async function PUT(
     const validatedData = updateSubtaskSchema.parse(body)
 
     // Check if subtask exists and user has access
-    const subtask = await prisma.task.findFirst({
+    const existingSubtask = await prisma.subtask.findFirst({
       where: {
-        id: params.subtaskId,
-        parentTaskId: params.id,
+        id: params.id,
         OR: [
           { creatorId: session.user.id },
           { assigneeId: session.user.id },
           {
-            project: {
+            task: {
               OR: [
-                { ownerId: session.user.id },
+                { creatorId: session.user.id },
+                { assigneeId: session.user.id },
                 {
-                  members: {
-                    some: { userId: session.user.id }
+                  project: {
+                    OR: [
+                      { ownerId: session.user.id },
+                      {
+                        members: {
+                          some: { userId: session.user.id }
+                        }
+                      }
+                    ]
                   }
                 }
               ]
@@ -54,7 +135,7 @@ export async function PUT(
       }
     })
 
-    if (!subtask) {
+    if (!existingSubtask) {
       return NextResponse.json(
         { error: 'Subtask not found or access denied' },
         { status: 404 }
@@ -62,24 +143,33 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {}
+    const updateData: Partial<{
+      title: string
+      description: string | null
+      status: string
+      priority: string
+      assigneeId: string | null
+      position: number
+      dueDate: Date | null
+    }> = {}
 
     if (validatedData.title !== undefined) updateData.title = validatedData.title
     if (validatedData.description !== undefined) updateData.description = validatedData.description
     if (validatedData.status !== undefined) updateData.status = validatedData.status
     if (validatedData.priority !== undefined) updateData.priority = validatedData.priority
     if (validatedData.assigneeId !== undefined) updateData.assigneeId = validatedData.assigneeId
+    if (validatedData.position !== undefined) updateData.position = validatedData.position
 
     if (validatedData.dueDate !== undefined) {
       updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null
     }
 
-    const updatedSubtask = await prisma.task.update({
-      where: { id: params.subtaskId },
+    const updatedSubtask = await prisma.subtask.update({
+      where: { id: params.id },
       data: updateData,
       include: {
-        project: {
-          select: { id: true, name: true }
+        task: {
+          select: { id: true, title: true }
         },
         assignee: {
           select: { id: true, name: true, email: true, avatar: true }
@@ -113,7 +203,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; subtaskId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -126,15 +216,21 @@ export async function DELETE(
     }
 
     // Check if subtask exists and user has access to delete it
-    const subtask = await prisma.task.findFirst({
+    const subtask = await prisma.subtask.findFirst({
       where: {
-        id: params.subtaskId,
-        parentTaskId: params.id,
+        id: params.id,
         OR: [
           { creatorId: session.user.id },
           {
-            project: {
-              ownerId: session.user.id
+            task: {
+              OR: [
+                { creatorId: session.user.id },
+                {
+                  project: {
+                    ownerId: session.user.id
+                  }
+                }
+              ]
             }
           }
         ]
@@ -149,8 +245,8 @@ export async function DELETE(
     }
 
     // Delete the subtask
-    await prisma.task.delete({
-      where: { id: params.subtaskId }
+    await prisma.subtask.delete({
+      where: { id: params.id }
     })
 
     return NextResponse.json({

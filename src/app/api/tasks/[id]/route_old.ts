@@ -60,16 +60,16 @@ export async function GET(
         creator: {
           select: { id: true, name: true, email: true, avatar: true }
         },
+        parentTask: {
+          select: { id: true, title: true }
+        },
         subtasks: {
           include: {
             assignee: {
               select: { id: true, name: true, email: true, avatar: true }
-            },
-            creator: {
-              select: { id: true, name: true, email: true, avatar: true }
             }
           },
-          orderBy: { position: 'asc' }
+          orderBy: { createdAt: 'asc' }
         }
       }
     })
@@ -168,16 +168,16 @@ export async function PUT(
         creator: {
           select: { id: true, name: true, email: true, avatar: true }
         },
+        parentTask: {
+          select: { id: true, title: true }
+        },
         subtasks: {
           include: {
             assignee: {
               select: { id: true, name: true, email: true, avatar: true }
-            },
-            creator: {
-              select: { id: true, name: true, email: true, avatar: true }
             }
           },
-          orderBy: { position: 'asc' }
+          orderBy: { createdAt: 'asc' }
         }
       }
     })

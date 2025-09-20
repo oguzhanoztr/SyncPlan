@@ -7,15 +7,13 @@ import { z } from 'zod'
 const createSubtaskSchema = z.object({
   title: z.string().min(1, "Subtask title is required"),
   description: z.string().optional(),
+  taskId: z.string().min(1, "Task ID is required"),
   assigneeId: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
   dueDate: z.string().optional(),
 })
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -26,14 +24,13 @@ export async function POST(
       )
     }
 
-    const taskId = params.id
     const body = await request.json()
     const validatedData = createSubtaskSchema.parse(body)
 
     // Check if parent task exists and user has access
     const parentTask = await prisma.task.findFirst({
       where: {
-        id: taskId,
+        id: validatedData.taskId,
         OR: [
           { project: { ownerId: session.user.id } },
           { assigneeId: session.user.id },
@@ -46,9 +43,6 @@ export async function POST(
             }
           }
         ]
-      },
-      include: {
-        project: true
       }
     })
 
@@ -60,20 +54,19 @@ export async function POST(
     }
 
     // Create subtask
-    const subtask = await prisma.task.create({
+    const subtask = await prisma.subtask.create({
       data: {
         title: validatedData.title,
         description: validatedData.description,
-        projectId: parentTask.projectId,
+        taskId: validatedData.taskId,
         assigneeId: validatedData.assigneeId,
         priority: validatedData.priority,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         creatorId: session.user.id,
-        parentTaskId: taskId,
       },
       include: {
-        project: {
-          select: { id: true, name: true }
+        task: {
+          select: { id: true, title: true }
         },
         assignee: {
           select: { id: true, name: true, email: true, avatar: true }
@@ -105,10 +98,7 @@ export async function POST(
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -119,7 +109,15 @@ export async function GET(
       )
     }
 
-    const taskId = params.id
+    const { searchParams } = new URL(request.url)
+    const taskId = searchParams.get('taskId')
+
+    if (!taskId) {
+      return NextResponse.json(
+        { error: 'Task ID is required' },
+        { status: 400 }
+      )
+    }
 
     // Check if parent task exists and user has access
     const parentTask = await prisma.task.findFirst({
@@ -148,13 +146,13 @@ export async function GET(
     }
 
     // Get subtasks
-    const subtasks = await prisma.task.findMany({
+    const subtasks = await prisma.subtask.findMany({
       where: {
-        parentTaskId: taskId
+        taskId: taskId
       },
       include: {
-        project: {
-          select: { id: true, name: true }
+        task: {
+          select: { id: true, title: true }
         },
         assignee: {
           select: { id: true, name: true, email: true, avatar: true }
@@ -163,7 +161,7 @@ export async function GET(
           select: { id: true, name: true, email: true, avatar: true }
         }
       },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { position: 'asc' }
     })
 
     return NextResponse.json({ subtasks })

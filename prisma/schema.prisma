@@ -27,13 +27,15 @@ model User {
   sessions Session[]
 
   // Relations
-  ownedProjects    Project[]       @relation("ProjectOwner")
-  projectMembers   ProjectMember[]
-  assignedTasks    Task[]          @relation("TaskAssignee")
-  createdTasks     Task[]          @relation("TaskCreator")
-  comments         Comment[]
-  notifications    Notification[]
-  activityLogs     ActivityLog[]
+  ownedProjects     Project[]       @relation("ProjectOwner")
+  projectMembers    ProjectMember[]
+  assignedTasks     Task[]          @relation("TaskAssignee")
+  createdTasks      Task[]          @relation("TaskCreator")
+  assignedSubtasks  Subtask[]       @relation("SubtaskAssignee")
+  createdSubtasks   Subtask[]       @relation("SubtaskCreator")
+  comments          Comment[]
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
 
   @@map("users")
 }
@@ -114,7 +116,6 @@ model Task {
   actualHours   Float?
   tags          String[]
   position      Float         @default(0)
-  parentTaskId  String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -122,14 +123,36 @@ model Task {
   project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee     User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
   creator      User             @relation("TaskCreator", fields: [creatorId], references: [id])
-  parentTask   Task?            @relation("TaskSubtasks", fields: [parentTaskId], references: [id])
-  subtasks     Task[]           @relation("TaskSubtasks")
   dependencies TaskDependency[] @relation("TaskDependencies")
   dependents   TaskDependency[] @relation("DependentTasks")
   planTasks    PlanTask[]
   comments     Comment[]
+  subtasks     Subtask[]
 
   @@map("tasks")
+}
+
+// Subtask model
+model Subtask {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  taskId      String
+  assigneeId  String?
+  creatorId   String
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?
+  position    Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  task     Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee User? @relation("SubtaskAssignee", fields: [assigneeId], references: [id])
+  creator  User  @relation("SubtaskCreator", fields: [creatorId], references: [id])
+
+  @@map("subtasks")
 }
 
 // Plan model (Sprint/Milestone)
