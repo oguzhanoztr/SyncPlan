@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { cache, generateCacheKey, invalidateCache } from '@/lib/cache'
 import { z } from 'zod'
 
 const createProjectSchema = z.object({
@@ -20,6 +21,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check cache first
+    const cacheKey = generateCacheKey.projects(session.user.id)
+    const cachedProjects = cache.get(cacheKey)
+
+    if (cachedProjects) {
+      return NextResponse.json({ projects: cachedProjects })
+    }
+
+    // Use optimized Prisma query
     const projects = await prisma.project.findMany({
       where: {
         OR: [
@@ -42,15 +52,6 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        tasks: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-            dueDate: true,
-          }
-        },
         _count: {
           select: {
             tasks: true
@@ -59,6 +60,9 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { updatedAt: 'desc' }
     })
+
+    // Cache the results for 5 minutes
+    cache.set(cacheKey, projects, 300)
 
     return NextResponse.json({ projects })
 
@@ -109,6 +113,9 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Invalidate projects cache
+    invalidateCache.project(project.id)
 
     return NextResponse.json({
       message: 'Project created successfully',

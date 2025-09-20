@@ -6,14 +6,13 @@ import { useParams, useRouter } from "next/navigation"
 import { Layout } from "@/components/layout/layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -22,15 +21,10 @@ import {
   Plus,
   Edit,
   Clock,
-  User,
-  Calendar,
-  Flag,
   CheckCircle2,
   Circle,
-  MoreHorizontal,
-  MessageSquare,
-  Paperclip,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react"
 import Link from "next/link"
 
@@ -39,21 +33,25 @@ const createSubtaskSchema = z.object({
   description: z.string().optional(),
 })
 
-const updateTaskSchema = z.object({
-  title: z.string().min(1, "Task title is required"),
+const updateSubtaskSchema = z.object({
+  title: z.string().min(1, "Subtask title is required"),
   description: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED']),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'COMPLETED']),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   dueDate: z.string().optional(),
 })
 
-const commentSchema = z.object({
-  comment: z.string().min(1, "Comment cannot be empty"),
+const updateTaskSchema = z.object({
+  title: z.string().min(1, "Task title is required"),
+  description: z.string().optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'COMPLETED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  dueDate: z.string().optional(),
 })
 
 type CreateSubtaskData = z.infer<typeof createSubtaskSchema>
+type UpdateSubtaskData = z.infer<typeof updateSubtaskSchema>
 type UpdateTaskData = z.infer<typeof updateTaskSchema>
-type CommentData = z.infer<typeof commentSchema>
 
 interface Task {
   id: string
@@ -84,10 +82,6 @@ interface Task {
     email: string
     avatar?: string
   }
-  parentTask?: {
-    id: string
-    title: string
-  }
   subtasks: Array<{
     id: string
     title: string
@@ -107,16 +101,24 @@ interface Task {
 export default function TaskDetailPage() {
   const { data: session } = useSession()
   const params = useParams()
-  const router = useRouter()
   const taskId = params.id as string
 
   const [task, setTask] = useState<Task | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isCreatingSubtask, setIsCreatingSubtask] = useState(false)
-  const [isAddingComment, setIsAddingComment] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isSubtaskDialogOpen, setIsSubtaskDialogOpen] = useState(false)
+  const [isEditSubtaskDialogOpen, setIsEditSubtaskDialogOpen] = useState(false)
+  const [editingSubtask, setEditingSubtask] = useState<{
+    id: string
+    title: string
+    description?: string
+    status: string
+    priority: string
+    dueDate?: string
+  } | null>(null)
+  const [isUpdatingSubtask, setIsUpdatingSubtask] = useState(false)
 
   const subtaskForm = useForm<CreateSubtaskData>({
     resolver: zodResolver(createSubtaskSchema),
@@ -130,12 +132,10 @@ export default function TaskDetailPage() {
     resolver: zodResolver(updateTaskSchema),
   })
 
-  const commentForm = useForm<CommentData>({
-    resolver: zodResolver(commentSchema),
-    defaultValues: {
-      comment: "",
-    },
+  const updateSubtaskForm = useForm<UpdateSubtaskData>({
+    resolver: zodResolver(updateSubtaskSchema),
   })
+
 
   useEffect(() => {
     fetchTask()
@@ -196,15 +196,14 @@ export default function TaskDetailPage() {
     setIsCreatingSubtask(true)
 
     try {
-      const response = await fetch('/api/tasks', {
+      const response = await fetch('/api/subtasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...data,
-          projectId: task?.project.id,
-          parentTaskId: taskId,
+          taskId: taskId,
           priority: 'MEDIUM',
         }),
       })
@@ -245,6 +244,89 @@ export default function TaskDetailPage() {
     }
   }
 
+  const handleSubtaskStatusUpdate = async (subtaskId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/subtasks/${subtaskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh task data to update subtasks
+        fetchTask()
+      }
+    } catch (error) {
+      console.error('Error updating subtask status:', error)
+    }
+  }
+
+  const handleSubtaskDelete = async (subtaskId: string) => {
+    if (!confirm('Are you sure you want to delete this subtask?')) return
+
+    try {
+      const response = await fetch(`/api/subtasks/${subtaskId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh task data to update subtasks
+        fetchTask()
+      }
+    } catch (error) {
+      console.error('Error deleting subtask:', error)
+    }
+  }
+
+  const handleEditSubtask = (subtask: {
+    id: string
+    title: string
+    description?: string
+    status: string
+    priority: string
+    dueDate?: string
+  }) => {
+    setEditingSubtask(subtask)
+    updateSubtaskForm.reset({
+      title: subtask.title,
+      description: subtask.description || "",
+      status: subtask.status,
+      priority: subtask.priority,
+      dueDate: subtask.dueDate ? new Date(subtask.dueDate).toISOString().split('T')[0] : "",
+    })
+    setIsEditSubtaskDialogOpen(true)
+  }
+
+  const handleUpdateSubtask = async (data: UpdateSubtaskData) => {
+    if (!editingSubtask) return
+
+    setIsUpdatingSubtask(true)
+
+    try {
+      const response = await fetch(`/api/subtasks/${editingSubtask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        await fetchTask() // Refresh task data
+        setIsEditSubtaskDialogOpen(false)
+        setEditingSubtask(null)
+      }
+    } catch (error) {
+      console.error('Error updating subtask:', error)
+    } finally {
+      setIsUpdatingSubtask(false)
+    }
+  }
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'URGENT':
@@ -261,9 +343,12 @@ export default function TaskDetailPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED':
+      case 'DONE':
         return <CheckCircle2 className="h-4 w-4 text-green-600" />
       case 'IN_PROGRESS':
         return <Clock className="h-4 w-4 text-blue-600" />
+      case 'REVIEW':
+        return <Clock className="h-4 w-4 text-yellow-600" />
       default:
         return <Circle className="h-4 w-4 text-gray-400" />
     }
@@ -363,7 +448,7 @@ export default function TaskDetailPage() {
                             <Label htmlFor="status">Status</Label>
                             <Select
                               value={updateForm.watch("status")}
-                              onValueChange={(value) => updateForm.setValue("status", value as any)}
+                              onValueChange={(value) => updateForm.setValue("status", value as "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "COMPLETED")}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -371,6 +456,8 @@ export default function TaskDetailPage() {
                               <SelectContent>
                                 <SelectItem value="TODO">To Do</SelectItem>
                                 <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                                <SelectItem value="REVIEW">Review</SelectItem>
+                                <SelectItem value="DONE">Done</SelectItem>
                                 <SelectItem value="COMPLETED">Completed</SelectItem>
                               </SelectContent>
                             </Select>
@@ -380,7 +467,7 @@ export default function TaskDetailPage() {
                             <Label htmlFor="priority">Priority</Label>
                             <Select
                               value={updateForm.watch("priority")}
-                              onValueChange={(value) => updateForm.setValue("priority", value as any)}
+                              onValueChange={(value) => updateForm.setValue("priority", value as "LOW" | "MEDIUM" | "HIGH" | "URGENT")}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -485,16 +572,16 @@ export default function TaskDetailPage() {
                 {task.subtasks && task.subtasks.length > 0 ? (
                   <div className="space-y-3">
                     {task.subtasks.map((subtask) => (
-                      <div key={subtask.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div key={subtask.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <button
-                          onClick={() => handleStatusChange(subtask.status === 'COMPLETED' ? 'TODO' : 'COMPLETED')}
+                          onClick={() => handleSubtaskStatusUpdate(subtask.id, (subtask.status === 'COMPLETED' || subtask.status === 'DONE') ? 'TODO' : 'COMPLETED')}
                           className="flex-shrink-0"
                         >
                           {getStatusIcon(subtask.status)}
                         </button>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 cursor-default">
                           <div className="flex items-center gap-2">
-                            <span className={`font-medium ${subtask.status === 'COMPLETED' ? 'line-through text-muted-foreground' : ''}`}>
+                            <span className={`font-medium ${(subtask.status === 'COMPLETED' || subtask.status === 'DONE') ? 'line-through text-muted-foreground' : ''}`}>
                               {subtask.title}
                             </span>
                             <Badge variant={getPriorityColor(subtask.priority)} className="text-xs">
@@ -513,6 +600,22 @@ export default function TaskDetailPage() {
                             </AvatarFallback>
                           </Avatar>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditSubtask(subtask)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSubtaskDelete(subtask.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -523,6 +626,99 @@ export default function TaskDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Edit Subtask Dialog */}
+            <Dialog open={isEditSubtaskDialogOpen} onOpenChange={setIsEditSubtaskDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Subtask</DialogTitle>
+                  <DialogDescription>
+                    Update the subtask details and settings.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={updateSubtaskForm.handleSubmit(handleUpdateSubtask)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="subtask-title-edit">Title</Label>
+                    <Input
+                      id="subtask-title-edit"
+                      {...updateSubtaskForm.register("title")}
+                      disabled={isUpdatingSubtask}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subtask-description-edit">Description</Label>
+                    <Textarea
+                      id="subtask-description-edit"
+                      {...updateSubtaskForm.register("description")}
+                      disabled={isUpdatingSubtask}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="subtask-status">Status</Label>
+                      <Select
+                        value={updateSubtaskForm.watch("status")}
+                        onValueChange={(value) => updateSubtaskForm.setValue("status", value as "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "COMPLETED")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="TODO">To Do</SelectItem>
+                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                          <SelectItem value="REVIEW">Review</SelectItem>
+                          <SelectItem value="DONE">Done</SelectItem>
+                          <SelectItem value="COMPLETED">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="subtask-priority">Priority</Label>
+                      <Select
+                        value={updateSubtaskForm.watch("priority")}
+                        onValueChange={(value) => updateSubtaskForm.setValue("priority", value as "LOW" | "MEDIUM" | "HIGH" | "URGENT")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LOW">Low</SelectItem>
+                          <SelectItem value="MEDIUM">Medium</SelectItem>
+                          <SelectItem value="HIGH">High</SelectItem>
+                          <SelectItem value="URGENT">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subtask-dueDate">Due Date</Label>
+                    <Input
+                      id="subtask-dueDate"
+                      type="date"
+                      {...updateSubtaskForm.register("dueDate")}
+                      disabled={isUpdatingSubtask}
+                    />
+                  </div>
+
+                  <DialogFooter>
+                    <Button type="submit" disabled={isUpdatingSubtask}>
+                      {isUpdatingSubtask ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Subtask"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Task Sidebar */}
@@ -542,6 +738,8 @@ export default function TaskDetailPage() {
                       <SelectContent>
                         <SelectItem value="TODO">To Do</SelectItem>
                         <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                        <SelectItem value="REVIEW">Review</SelectItem>
+                        <SelectItem value="DONE">Done</SelectItem>
                         <SelectItem value="COMPLETED">Completed</SelectItem>
                       </SelectContent>
                     </Select>

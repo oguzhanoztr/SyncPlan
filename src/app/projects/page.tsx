@@ -16,6 +16,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Plus, Search, Filter, Loader2, Calendar } from "lucide-react"
+import { ProjectGridSkeleton } from "@/components/common/project-card-skeleton"
+import { EditProjectModal } from "@/components/modals/edit-project-modal"
+import { DeleteProjectModal } from "@/components/modals/delete-project-modal"
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Project name is required"),
@@ -63,6 +66,9 @@ export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
   const form = useForm<CreateProjectData>({
     resolver: zodResolver(createProjectSchema),
@@ -139,6 +145,30 @@ export default function ProjectsPage() {
     } finally {
       setIsCreating(false)
     }
+  }
+
+  const handleEditProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId)
+    if (project) {
+      setSelectedProject(project)
+      setEditModalOpen(true)
+    }
+  }
+
+  const handleDeleteProject = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId)
+    if (project) {
+      setSelectedProject(project)
+      setDeleteModalOpen(true)
+    }
+  }
+
+  const handleEditSuccess = () => {
+    fetchProjects()
+  }
+
+  const handleDeleteSuccess = () => {
+    fetchProjects()
   }
 
   const getStatusBadgeVariant = (status: string) => {
@@ -298,9 +328,12 @@ export default function ProjectsPage() {
           </Tabs>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.length > 0 ? (
-            filteredProjects.map((project) => (
+        {isLoading ? (
+          <ProjectGridSkeleton />
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredProjects.length > 0 ? (
+              filteredProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 id={project.id}
@@ -319,13 +352,17 @@ export default function ProjectsPage() {
                     name: project.owner.name || project.owner.email,
                     avatar: project.owner.avatar
                   },
-                  ...project.members.map(m => ({
+                  ...(project.members || []).map(m => ({
                     id: m.user.id,
                     name: m.user.name || m.user.email,
                     avatar: m.user.avatar
                   }))
                 ]}
                 color="bg-blue-500"
+                isOwner={project.owner.id === session?.user?.id}
+                canEdit={project.owner.id === session?.user?.id || (project.members || []).some(m => m.user.id === session?.user?.id && ['ADMIN', 'EDITOR'].includes(m.role))}
+                onEdit={handleEditProject}
+                onDelete={handleDeleteProject}
               />
             ))
           ) : (
@@ -350,8 +387,23 @@ export default function ProjectsPage() {
                 </CardContent>
               </Card>
             </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
+        <EditProjectModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          project={selectedProject}
+          onSuccess={handleEditSuccess}
+        />
+
+        <DeleteProjectModal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          project={selectedProject}
+          onSuccess={handleDeleteSuccess}
+        />
       </div>
     </Layout>
   )
