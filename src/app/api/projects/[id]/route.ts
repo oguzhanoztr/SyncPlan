@@ -41,6 +41,7 @@ export async function GET(
           }
         },
         tasks: {
+          where: { parentTaskId: null }, // Only get main tasks, not subtasks
           include: {
             assignee: {
               select: { id: true, name: true, email: true, avatar: true }

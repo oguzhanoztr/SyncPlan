@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const whereClause = {
       AND: [
         projectId ? { projectId } : {},
+        { parentTaskId: null }, // Only get main tasks, not subtasks
         {
           OR: [
             { project: { ownerId: session.user.id } },

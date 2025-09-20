@@ -30,7 +30,8 @@ import {
   MoreHorizontal,
   MessageSquare,
   Paperclip,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react"
 import Link from "next/link"
 
@@ -242,6 +243,44 @@ export default function TaskDetailPage() {
       }
     } catch (error) {
       console.error('Error updating task status:', error)
+    }
+  }
+
+  const handleSubtaskStatusUpdate = async (subtaskId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      })
+
+      if (response.ok) {
+        // Refresh task data to update subtasks
+        fetchTask()
+      }
+    } catch (error) {
+      console.error('Error updating subtask status:', error)
+    }
+  }
+
+  const handleSubtaskDelete = async (subtaskId: string) => {
+    if (!confirm('Are you sure you want to delete this subtask?')) return
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/subtasks/${subtaskId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh task data to update subtasks
+        fetchTask()
+      }
+    } catch (error) {
+      console.error('Error deleting subtask:', error)
     }
   }
 
@@ -485,14 +524,14 @@ export default function TaskDetailPage() {
                 {task.subtasks && task.subtasks.length > 0 ? (
                   <div className="space-y-3">
                     {task.subtasks.map((subtask) => (
-                      <div key={subtask.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                      <div key={subtask.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                         <button
-                          onClick={() => handleStatusChange(subtask.status === 'COMPLETED' ? 'TODO' : 'COMPLETED')}
+                          onClick={() => handleSubtaskStatusUpdate(subtask.id, subtask.status === 'COMPLETED' ? 'TODO' : 'COMPLETED')}
                           className="flex-shrink-0"
                         >
                           {getStatusIcon(subtask.status)}
                         </button>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 cursor-default">
                           <div className="flex items-center gap-2">
                             <span className={`font-medium ${subtask.status === 'COMPLETED' ? 'line-through text-muted-foreground' : ''}`}>
                               {subtask.title}
@@ -513,6 +552,14 @@ export default function TaskDetailPage() {
                             </AvatarFallback>
                           </Avatar>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSubtaskDelete(subtask.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
