@@ -1,17 +1,20 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
-import { Calendar, Users, CheckCircle2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Calendar, Users, CheckCircle2, MoreVertical, Edit, Trash2 } from "lucide-react"
 
 interface ProjectCardProps {
   id: string
   name: string
   description?: string
-  status: "active" | "completed" | "archived"
+  status: "active" | "completed" | "archived" | "on-hold"
   progress: number
   totalTasks: number
   completedTasks: number
@@ -22,6 +25,10 @@ interface ProjectCardProps {
     avatar?: string
   }>
   color?: string
+  isOwner?: boolean
+  canEdit?: boolean
+  onEdit?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
 export function ProjectCard({
@@ -34,18 +41,36 @@ export function ProjectCard({
   completedTasks,
   dueDate,
   members,
-  color = "bg-blue-500"
+  color = "bg-blue-500",
+  isOwner = false,
+  canEdit = false,
+  onEdit,
+  onDelete
 }: ProjectCardProps) {
   const statusColors = {
     active: "bg-green-500",
     completed: "bg-blue-500",
-    archived: "bg-gray-500"
+    archived: "bg-gray-500",
+    "on-hold": "bg-orange-500"
   }
 
   const statusLabels = {
     active: "Active",
     completed: "Completed",
-    archived: "Archived"
+    archived: "Archived",
+    "on-hold": "On Hold"
+  }
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onEdit?.(id)
+  }
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onDelete?.(id)
   }
 
   return (
@@ -53,7 +78,7 @@ export function ProjectCard({
       <Card className="hover:shadow-md transition-shadow cursor-pointer">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${color}`} />
                 <h3 className="font-semibold text-lg leading-none">{name}</h3>
@@ -64,12 +89,40 @@ export function ProjectCard({
                 </p>
               )}
             </div>
-            <Badge
-              variant="secondary"
-              className={`${statusColors[status]} text-white`}
-            >
-              {statusLabels[status]}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className={`${statusColors[status]} text-white`}
+              >
+                {statusLabels[status]}
+              </Badge>
+              {(canEdit || isOwner) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEdit && (
+                      <DropdownMenuItem onClick={handleEdit}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    {isOwner && (
+                      <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </CardHeader>
 

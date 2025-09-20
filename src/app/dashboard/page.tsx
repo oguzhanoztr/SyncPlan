@@ -8,6 +8,7 @@ import { TaskCard } from "@/components/common/task-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, TrendingUp, Clock, CheckCircle2, Loader2 } from "lucide-react"
+import { ProjectGridSkeleton } from "@/components/common/project-card-skeleton"
 import Link from "next/link"
 
 const mockProjects = [
@@ -275,7 +276,15 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Recent Projects</h2>
             <div className="space-y-4">
-              {projects.length > 0 ? (
+              {isLoading ? (
+                <div className="grid gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-32">
+                      <ProjectGridSkeleton />
+                    </div>
+                  ))}
+                </div>
+              ) : projects.length > 0 ? (
                 projects.slice(0, 3).map((project) => (
                   <ProjectCard
                     key={project.id}
@@ -295,13 +304,15 @@ export default function DashboardPage() {
                         name: project.owner.name || project.owner.email,
                         avatar: project.owner.avatar
                       },
-                      ...project.members.map(m => ({
+                      ...(project.members || []).map(m => ({
                         id: m.user.id,
                         name: m.user.name || m.user.email,
                         avatar: m.user.avatar
                       }))
                     ]}
                     color="bg-blue-500"
+                    isOwner={false}
+                    canEdit={false}
                   />
                 ))
               ) : (

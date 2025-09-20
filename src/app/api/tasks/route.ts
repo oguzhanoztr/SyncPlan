@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { cache, generateCacheKey, invalidateCache } from '@/lib/cache'
 import { z } from 'zod'
 
 const createTaskSchema = z.object({
@@ -27,10 +28,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
 
+    // Check cache first
+    const cacheKey = projectId
+      ? generateCacheKey.projectTasks(projectId, session.user.id)
+      : generateCacheKey.userTasks(session.user.id)
+    const cachedTasks = cache.get(cacheKey)
+
+    if (cachedTasks) {
+      return NextResponse.json({ tasks: cachedTasks })
+    }
+
+    // Use optimized Prisma query
     const whereClause = {
       AND: [
         projectId ? { projectId } : {},
-        { parentTaskId: null }, // Only get main tasks, not subtasks
         {
           OR: [
             { project: { ownerId: session.user.id } },
@@ -49,7 +60,19 @@ export async function GET(request: NextRequest) {
 
     const tasks = await prisma.task.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        estimatedHours: true,
+        actualHours: true,
+        tags: true,
+        position: true,
+        createdAt: true,
+        updatedAt: true,
         project: {
           select: { id: true, name: true }
         },
@@ -59,20 +82,18 @@ export async function GET(request: NextRequest) {
         creator: {
           select: { id: true, name: true, email: true, avatar: true }
         },
-        parentTask: {
-          select: { id: true, title: true }
-        },
-        subtasks: {
-          include: {
-            assignee: {
-              select: { id: true, name: true, email: true, avatar: true }
-            }
-          },
-          orderBy: { createdAt: 'asc' }
+        _count: {
+          select: {
+            subtasks: true
+          }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 100
     })
+
+    // Cache the results for 5 minutes
+    cache.set(cacheKey, tasks, 300)
 
     return NextResponse.json({ tasks })
 
@@ -143,6 +164,9 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Invalidate related caches
+    invalidateCache.task(task.id, validatedData.projectId)
 
     return NextResponse.json({
       message: 'Task created successfully',

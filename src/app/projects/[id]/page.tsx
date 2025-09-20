@@ -396,7 +396,7 @@ export default function ProjectDetailPage() {
                   <p className="text-xs text-muted-foreground">Owner</p>
                 </div>
               </div>
-              {project.members.map((member) => (
+              {(project.members || []).map((member) => (
                 <div key={member.user.id} className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={member.user.avatar || ""} />
