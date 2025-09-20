@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           }
         },
         tasks: {
+          where: { parentTaskId: null }, // Only get main tasks, not subtasks
           select: {
             id: true,
             title: true,
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
         },
         _count: {
           select: {
-            tasks: true
+            tasks: { where: { parentTaskId: null } } // Only count main tasks, not subtasks
           }
         }
       },
