@@ -1,36 +1,160 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 SyncPlan
 
-## Getting Started
+**SyncPlan** is a lightweight planning and synchronization tool designed to help users organize tasks, plans, and schedules in a structured way.
 
-First, run the development server:
+The project focuses on **simplicity, modular architecture, and scalability**, making it easy to extend and integrate with other systems.
+
+---
+
+## ✨ Features
+
+- 📋 Task and plan organization
+- 🔄 Synchronization-ready architecture
+- ⚙️ Environment-based configuration
+- 🧩 Modular and extensible structure
+- 🚀 Ready for API integrations
+- 🌍 Open-source and customizable
+
+---
+
+## 🏗 Project Structure
+
+SyncPlan follows a modular architecture separating responsibilities across different components.
+
+- `src` / `app` / `server` → Main application logic  
+- `config` → Configuration and environment variables  
+- `api` → API routes and request handlers  
+- `services` → Business logic layer  
+- `models` → Data models and structures  
+- `utils` → Helper utilities and shared functions  
+
+This structure improves **maintainability, scalability, and readability**.
+
+---
+
+## 📦 Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/oguzhanoztr/SyncPlan.git
+cd SyncPlan
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+or (depending on the tech stack)
+
+```bash
+go mod tidy
+```
+
+---
+
+## ⚙️ Environment Variables
+
+Create a `.env` file in the root directory.
+
+Example:
+
+```env
+PORT=3000
+DATABASE_URL=your_database_url
+JWT_SECRET=your_secret_key
+```
+---
+
+## ▶️ Running the Project
+
+Development mode:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+or
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+go run main.go
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Production:
 
-## Learn More
+```bash
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🌐 API Overview
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Example endpoints:
 
-## Deploy on Vercel
+```text
+GET    /plans
+POST   /plans
+GET    /plans/:id
+PUT    /plans/:id
+DELETE /plans/:id
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+These endpoints provide **basic CRUD operations for managing plans**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🔐 Security
+
+Sensitive information should always be stored using environment variables.
+
+Best practices:
+
+- ❌ Never commit `.env` files
+- 🔑 Rotate exposed credentials immediately
+- 🛡 Use strong database passwords
+- 🔐 Secure authentication tokens
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+Steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push your branch
+5. Open a Pull Request
+
+---
+
+## 🗺 Roadmap
+
+Future improvements planned for SyncPlan:
+
+- ⚡ Real-time synchronization
+- 👥 Multi-user collaboration
+- 🔐 Authentication system
+- 📱 Mobile integration
+- 💾 Offline support
+- 📊 Dashboard and analytics
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 👨‍💻 Author
+
+**Oğuzhan Öztürk**
+
+GitHub:  
+https://github.com/oguzhanoztr
