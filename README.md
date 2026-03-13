@@ -106,18 +106,6 @@ These endpoints provide **basic CRUD operations for managing plans**.
 
 ---
 
-## 🔐 Security
-
-Sensitive information should always be stored using environment variables.
-
-Best practices:
-
-- ❌ Never commit `.env` files
-- 🔑 Rotate exposed credentials immediately
-- 🛡 Use strong database passwords
-- 🔐 Secure authentication tokens
-
----
 
 ## 🤝 Contributing
 
